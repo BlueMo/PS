@@ -19,7 +19,7 @@ void updateST(int idx, int val)
 	}
 }
 
-int num_underK(int l, int r)
+int num_overK(int l, int r)
 {
 	int ans = 0;
 	l += tree_size, r += tree_size;
@@ -61,7 +61,7 @@ int main()
 	{
 		cin >> u >> v >> k;
 		u--, v--;
-		cout << num_underK(u, v) << "\n";
+		cout << num_overK(u, v) << "\n";
 	}
 	return 0;
 }
