@@ -4,13 +4,12 @@
 #include<algorithm>
 #include<unordered_map>
 #include<vector>
-#include<queue>
 using namespace std;
 
 int N, Q, a[1000001], tree_size = 1, u, v, last_ans;
 unordered_map<int, int> map;
 vector<int> tree[1<<21];
-queue<int> next_idx[1000001];
+int next_idx[1000001];
 
 void updateST(int idx, int val)
 {
@@ -56,17 +55,13 @@ int main()
 		cin >> a[i];
 		if (map.end() == map.find(a[i])) map[a[i]] = map.size();
 		a[i] = map[a[i]];
-		next_idx[a[i]].push(i);
 	}
-	
+	for (int i = 0; i < map.size(); ++i) next_idx[i] = N;
 	for (int i = 0; i < N; ++i)
 	{
-		queue<int> &q = next_idx[a[i]];
-		int h;
-		q.pop();
-		if (!q.empty()) h = q.front();
-		else h = N;
-		updateST(i, h);
+		int &t = next_idx[a[i]];
+		updateST(i, t);
+		t = i;
 	}
 	for (int i = 1; i < tree_size; ++i) sort(tree[i].begin(), tree[i].end());
 	
