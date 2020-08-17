@@ -57,7 +57,7 @@ int main()
 		a[i] = map[a[i]];
 	}
 	for (int i = 0; i < map.size(); ++i) next_idx[i] = N;
-	for (int i = 0; i < N; ++i)
+	for (int i = N-1; i >= 0; --i)
 	{
 		int &t = next_idx[a[i]];
 		updateST(i, t);
