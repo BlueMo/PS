@@ -1,25 +1,29 @@
 // 13543: 수열과 쿼리 2
+// fail 1~?: query 함수가 int형이여서 답을 잘못 출력함
+// 		   : 2^32 * 2^32 * a -> long long int 넘어감
+//         : % 연산으로 인한 시간초과... -> 왜 이렇게 시간을 많이 잡아먹지? (web ide 환경으로 N,M=10^5 기준 2초 넘게 차이남)
+
 
 #include<iostream>
 #include<algorithm>
 #include<cstring>
+#include<cstdlib>
 using namespace std;
-typedef long long ll;
+typedef unsigned ll;
 
 
-int N, M, a, c[11][11];
-ll p[200001][11], MOD = (ll)1<<32;
+int N, M, c[12][12];
+ll a, p[200002][12];
 
 struct node
 {
 	node *l, *r, *p;		// left, right, parent
 	int cnt;				// cnt(for find Kth)
-	int v;
-	ll eq[11];				// sum of Ai*(x+1)^k
-	ll tmp[11];
-	int lazy;				// lazy
+	ll v;					// value
+	ll eq[12];				// sum of Ai*(x+1)^k
+	ll tmp[12];
 	
-	node(int _v)
+	node(ll _v)
 	{
 		l = r = p = NULL;
 		v = _v;
@@ -34,38 +38,46 @@ struct SplayTree
 	
 	int size(){ return root->cnt; }
 	
-	void update(node *x)
+	void update(node *x, bool calc_eq=true)
 	{
 		int k;
 		k = x->cnt = 1;
 		if (x->l)
 		{
-			for (int i = 0; i < 11; ++i) x->tmp[i] = x->l->eq[i];
 			x->cnt += x->l->cnt;
-			k = x->cnt;
-			for (int i = 0; i < 11; ++i)
+			if (calc_eq)
 			{
-				for (int j = 0; j <= i; ++j) 
+				memcpy(x->tmp, x->l->eq, sizeof(x->tmp));
+				k = x->cnt;
+				for (int i = 0; i < 11; ++i)
 				{
-					x->tmp[i] = (x->tmp[i] + x->v * c[i][j] * p[k-1][j]) % MOD;
+					for (int j = 0; j <= i; ++j) 
+					{
+						x->tmp[i] = (x->tmp[i] + x->v * c[i][j] * p[k-1][j]);
+					}
 				}
 			}
 		}
-		else
+		else if (calc_eq)
 		{
 			for (int i = 0; i < 11; ++i) x->tmp[i] = x->v;
 		}
 		if (x->r)
 		{
-			for (int i = 0; i < 11; ++i)
+			if (calc_eq)
 			{
-				for (int j = 0; j <= i; ++j)
-					x->tmp[i] = (x->tmp[i] + x->r->eq[i-j] * c[i][j] * p[k][j]) % MOD;
+				for (int i = 0; i < 11; ++i)
+				{
+					for (int j = 0; j <= i; ++j)
+					{
+						x->tmp[i] = (x->tmp[i] + x->r->eq[i-j] * c[i][j] * p[k][j]);
+					}
+				}
 			}
 			x->cnt += x->r->cnt;
 		}
 		
-		for (int i = 0; i < 11; ++i) x->eq[i] = x->tmp[i];
+		if (calc_eq) memcpy(x->eq, x->tmp, sizeof(x->eq));
 	}
 	
 	void rotate(node *x)
@@ -89,23 +101,25 @@ struct SplayTree
 		if (!g) root = x;
 		else if (g->l == p) g->l = x;
 		else g->r = x;
+		memcpy(x->eq, p->eq, sizeof(x->eq));
 		update(p);
-		update(x);
+		update(x, false);
 	}
 	
-	void splay(node *x)
+	void splay(node *x, node *y = NULL)
 	{
-		while (x->p)
+		while (x->p != y)
 		{
 			node *p = x->p;
 			node *g = p->p;
-			if (p != root)
+			if (g != y)
 			{
 				if ( (g->l == p) == (p->l == x) ) rotate(p);
 				else rotate(x);
 			}
 			rotate(x);
 		}
+		if (!y) root = x;
 	}
 	
 	node* findKth(int k)		// 0-based
@@ -123,7 +137,7 @@ struct SplayTree
 		return x;
 	}
 	
-	void push(int k, int val)
+	void push(int k, ll val)
 	{
 		node *n = new node(val);
 		if (!root)
@@ -142,8 +156,6 @@ struct SplayTree
 			}
 			root->l = n;
 			n->p = root;
-			
-			node *x = n;
 		}
 		else
 		{
@@ -153,88 +165,68 @@ struct SplayTree
 		splay(n);
 	}
 	
+	node* query(int l, int r)
+	{
+		if (r-l+1 == size()) return root;
+		if (!l) return findKth(r + 1)->l;
+		if (r+1 == size()) return findKth(l - 1)->r;
+		return interval(l, r);
+	}
+	
 	void pop(int k)
 	{
 		node *d = findKth(k);
+		if (!d) return;
 		if (d->l)
 		{
-			root = d->l;
-			root->p = NULL;	
 			if (d->r)
 			{
+				root = d->l;
+				root->p = NULL;
 				node *x = root;
 				while (x->r) x = x->r;
 				x->r = d->r;
 				d->r->p = x;
-				splay(x);
+				
+				x = x->r;
+				while (x)
+				{
+					update(x);
+					x = x->p;
+				}
+				
+				delete d;
+				return;
 			}
+			root = d->l;
+			root->p = NULL;
 			delete d;
 			return;
 		}
-		if (size() == 1)
+		if (d->r)
 		{
+			root = d->r;
+			root->p = NULL;
 			delete d;
-			root = NULL;
 			return;
 		}
-		root = d->r;
-		d->r->p = NULL;
 		delete d;
+		root = NULL;
 	}
 	
 	node* interval(int l, int r)
 	{
-		/*node *x;
-		
-		if (r < N-1) x = findKth(r + 1);
-		else x = findKth(r);
-		
-		if (l >= 1 && l != r)
-		{
-			node *y = findKth(l - 1);
-			if (x != y)
-			{
-				y->r = x;
-				x->p = y;
-			}
-		}
-		return x->l;*/
-		/*node *x = findKth(l - 1);
-		root = x->r;
-		root->p = NULL;
-		x->r = findKth(r - l + 1);
-		root->p = x;
-		root = x;*/
+		node *x = findKth(r + 1);
+		findKth(l - 1);
+		splay(x, root);
+		return x->l;
 	}
 	
-	void change(int k, int val)
+	void change(int k, ll val)
 	{
-		
-	}
-	
-	void preorder(int k, node *p)
-	{
-		if (!p) return;
-		cout << "(" << p->v << ", " << p->eq[k] << ") ";
-		cout << "L ";
-		preorder(k, p->l);
-		cout << "R ";
-		preorder(k, p->r);
-	}
-	void print(int k, int type = 0)
-	{
-		if (!root)
-		{
-			cout << "NULL ";
-			return;
-		}
-		if (type == 0) preorder(k, root);
-		cout << endl;
-	}
-	
-	int query(int l, int r, int k)
-	{
-		return interval(l, r)->eq[k];
+		findKth(k);
+		root->v = val;
+		update(root);
 	}
 }A;
 
@@ -255,25 +247,45 @@ int main()
 	for (int i = 1; i <= N; ++i)
 	{
 		p[i][0] = 1;
-		for (int j = 1; j < 11; ++j) p[i][j] = (p[i][j-1] * i) % MOD;
+		for (int j = 1; j < 11; ++j) p[i][j] = (p[i][j-1] * i);
 	}
+	
 	for (int i = 0; i < N; ++i)
 	{
 		cin >> a;
 		A.push(i, a);
 	}
-	cout << A.interval(0, 3) << endl;
-/*	cin >> M;
+	cin >> M;
 	for (int i = N+1; i <= N+M; ++i)
 	{
 		p[i][0] = 1;
-		for (int j = 1; j < 11; ++j) p[i][j] = p[i][j-1] * i;
+		for (int j = 1; j < 11; ++j) p[i][j] = (p[i][j-1] * i);
 	}
 	for (int i = 0; i < M; ++i)
 	{
-		int u, v, k;
-		cin >> u >> v >> k;
-		cout << A.query(u, v, k) << endl;
-	}*/
+		int q;
+		ll u, v, k;
+		cin >> q;
+		if (q == 1)
+		{
+			cin >> u >> v;
+			A.push(u, v);
+		}
+		else if (q == 2)
+		{
+			cin >> u;
+			A.pop(u);
+		}
+		else if (q == 3)
+		{
+			cin >> u >> v;
+			A.change(u, v);
+		}
+		else
+		{
+			cin >> u >> v >> k;
+			cout << A.query(u, v)->eq[k] << "\n";
+		}
+	}
 	return 0;
 }
