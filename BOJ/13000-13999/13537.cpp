@@ -1,4 +1,5 @@
 // 13537: 수열과 쿼리 1
+// for online query (merge sort tree)
 
 #include<iostream>
 #include<algorithm>
