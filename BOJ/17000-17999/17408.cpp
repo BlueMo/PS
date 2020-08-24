@@ -1,39 +1,43 @@
 // 17408: 수열과 쿼리 24
 // fail: 1~2 Ai를 v로 바꿀 때 max 갱신하는 부분 실수
-// 시간 없어서 대충 짜가지고 cmp 부분이 좀 비효율적임 -> 나중에 고쳐보자
+// 시간 없어서 대충 짜가지고 cmp 부분이 좀 비효율적임 -> 나중에 고쳐보자 -> 완료
 
 #include<iostream>
 #include<algorithm>
+#define MAX(a,b) (((a)>(b))?(a):(b))
 using namespace std;
 typedef pair<int, int> ii;
 
 int N, M, a, q, u, v, tree_size = 1;
 ii tree[1<<18];
 
-void cmp(ii &a, ii &b)
+ii cmp(ii a, ii b)
 {
-	int t[4];
-	t[0] = a.first;
-	t[1] = a.second;
-	t[2] = b.first;
-	t[3] = b.second;
-	sort(t, t+4);
-	a.first = t[3];
-	a.second = t[2];
+	int x, y;
+	x = MAX(a.second, b.second);
+	if (a.first >= b.first)
+	{
+		y = MAX(b.first, x);
+		a.second = y;
+	}
+	else
+	{
+		y = MAX(a.first, x);
+		a.first = b.first;
+		a.second = y;
+	}
+	return a;
 }
 
 void updateST(int idx, int val)
 {
 	idx += tree_size;
 	tree[idx].first = val;
-	ii tmp;
+	
 	while (idx > 1)
 	{
-		tmp = {0, 0};
-		cmp(tmp, tree[idx]);
-		cmp(tmp, tree[idx^1]);
+		tree[idx>>1] = cmp(tree[idx], tree[idx^1]);
 		idx >>= 1;
-		tree[idx] = tmp;
 	}
 }
 
@@ -46,12 +50,12 @@ int getAns(int l, int r)
 	{
 		if (l & 1)
 		{
-			cmp(ans, tree[l]);
+			ans = cmp(ans, tree[l]);
 			l++;
 		}
 		if (~r & 1)
 		{
-			cmp(ans, tree[r]);
+			ans = cmp(ans, tree[r]);
 			r--;
 		}
 		l >>= 1, r >>= 1;
