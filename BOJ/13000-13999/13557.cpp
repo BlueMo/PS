@@ -90,7 +90,7 @@ int main()
 			ST left = getMax(x1-1, y1-1);
 			ST mid = getMax(y1, x2-2);
 			ST right = getMax(x2-1, y2-1);
-			cout << getMax(x1-1, y1-1).rmax + mid.sum + getMax(x2-1, y2-1).lmax << "\n";
+			cout << left.rmax + mid.sum + right.lmax << "\n";
 		}
 		else
 		{
