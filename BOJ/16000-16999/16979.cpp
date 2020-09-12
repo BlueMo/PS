@@ -1,4 +1,4 @@
-// 수열과 쿼리 23
+// 16979 수열과 쿼리 23
 
 #include<iostream>
 #include<algorithm>
@@ -7,7 +7,7 @@
 using namespace std;
 typedef long long ll;
 
-int N, M, l, r, sz;
+int N, M, l, r;
 int tree[100001], a[100001];
 ll ans[100001], total_cnt;
 vector<int> b;
@@ -15,13 +15,26 @@ vector<int> b;
 struct Q
 {
 	int l, r, idx;
+	ll d;
 	
-	bool operator < (const Q &a) const
-	{
-		if (l/sz != a.l/sz) return l/sz < a.l/sz;
-		return r < a.r;
-	}
+	bool operator < (const Q &a) const{ return d < a.d; }
 }q[100001];
+
+ll convHilbert(int x, int y, int pow, int rotate)
+{
+	if (!pow) return 0;
+	int hpow = 1 << (pow - 1);
+	int seg = (x < hpow) ? ((y < hpow)?0:3) : ((y < hpow)?1:2);
+	seg = (seg + rotate) & 3;
+	const int rotateDelta[4] = {3, 0, 0, 1};
+	int nx = x & (x^hpow), ny = y & (y^hpow);
+	int nrot = (rotate + rotateDelta[seg]) & 3;
+	ll subSquareSize = (ll)1 << (2*pow - 2);
+	ll ans = seg * subSquareSize;
+	ll add = convHilbert(nx, ny, pow-1, nrot);
+	ans += (seg == 1 || seg == 2) ? add : (subSquareSize - add - 1);
+	return ans;
+}
 
 int get_idx(int val)
 {
@@ -55,7 +68,6 @@ int main()
 	cin.tie(0); cout.tie(0);
 	
 	cin >> N >> M;
-	sz = sqrt(N);
 	for (int i = 1; i <= N; ++i)
 	{
 		cin >> a[i];
@@ -71,6 +83,7 @@ int main()
 	{
 		cin >> q[i].l >> q[i].r;
 		q[i].idx = i;
+		q[i].d = convHilbert(q[i].l, q[i].r, 17, 0);
 	}
 	sort(q, q+M);
 	
