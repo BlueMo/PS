@@ -25,14 +25,14 @@ int findParent(int s)
 
 void unionSet(int x, int y, int c)
 {
-	x = findParent(x);
-	y = findParent(y);
-	if (x == y) return;
+	int xx = findParent(x);
+	int yy = findParent(y);
+	if (xx == yy) return;
 	
 	adj[y].push_back({x, c});
 	adj[x].push_back({y, c});
 	sum += (ll)c;
-	p[y] = x;
+	p[yy] = xx;
 }
 
 void DFS(int x, int p, int l)
