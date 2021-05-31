@@ -23,25 +23,6 @@ int main(){
     }
     cin >> a >> b;
 
-    dis[1] = 0;
-    pq.push({0, 1});
-    while (!pq.empty()){
-        pii h = pq.top();
-        pq.pop();
-
-        for (auto &i : adj[h.second]){
-            int d = h.first - i.first;
-
-            if (dis[i.second] < d){
-                dis[i.second] = d;
-                pq.push({d, i.second});
-            }
-        }
-    }
-    r[0] = -dis[a];
-    r[1] = -dis[b];
-    for (int i = 1; i <= N; ++i) dis[i] = -INF;
-    
     dis[a] = 0;
     pq.push({0, a});
     while (!pq.empty()){
@@ -57,8 +38,8 @@ int main(){
             }
         }
     }
-    r[0] -= dis[b];
-    r[1] -= dis[N];
+    r[0] -= dis[b] + dis[1];
+    r[1] -= dis[N] + dis[b];
     for (int i = 1; i <= N; ++i) dis[i] = -INF;
     
     dis[b] = 0;
@@ -77,7 +58,7 @@ int main(){
         }
     }
     r[0] -= dis[N];
-    r[1] -= dis[a];
+    r[1] -= dis[1];
 
     r[0] = r[0] < INF ? r[0] : INF;
     r[1] = r[1] < INF ? r[1] : INF;
